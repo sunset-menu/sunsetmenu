@@ -105,13 +105,31 @@
   .item{
     display:flex;
     justify-content:space-between;
-    align-items:baseline;
+    align-items:center;
     padding:11px 0;
     border-bottom:1px dotted rgba(247,198,0,.25);
-    gap:10px;
+    gap:12px;
   }
   .item:last-child{ border-bottom:none; }
+  .item-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    min-width:0;
+    flex:1;
+  }
+  .item-image{
+    width:90px;
+    height:90px;
+    flex:0 0 90px;
+    object-fit:cover;
+    border-radius:14px;
+    background:#242424;
+    border:1px solid rgba(247,198,0,.18);
+    display:block;
+  }
   .item .name{
+    min-width:0;
     font-size:.95rem;
     font-weight:500;
   }
@@ -122,10 +140,15 @@
     font-weight:400;
   }
   .item .price{
+    flex:0 0 auto;
     font-weight:700;
     color:var(--yellow);
     white-space:nowrap;
     font-size:.95rem;
+  }
+  @media (max-width:400px){
+    .item-left{ gap:11px; }
+    .item-image{ width:76px; height:76px; flex-basis:76px; border-radius:12px; }
   }
   @media (max-width:400px){
     .hero .menu-word{ font-size:2.9rem; }
@@ -187,6 +210,27 @@ function formatPrice(p){
   return n.toFixed(2).replace(".00","") + " ₺";
 }
 
+function escapeHtml(str){
+  return String(str ?? "").replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+const PLACEHOLDER_IMAGE = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+    <defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#f7c600"/><stop offset="1" stop-color="#e0201c"/></linearGradient></defs>
+    <rect width="140" height="140" rx="18" fill="#202020"/>
+    <circle cx="70" cy="57" r="28" fill="url(#g)" opacity=".9"/>
+    <path d="M30 118c8-24 23-36 40-36s32 12 40 36" fill="none" stroke="#fff7dc" stroke-width="8" stroke-linecap="round" opacity=".85"/>
+    <circle cx="60" cy="55" r="4" fill="#202020"/><circle cx="80" cy="55" r="4" fill="#202020"/>
+    <path d="M58 68c8 6 16 6 24 0" fill="none" stroke="#202020" stroke-width="4" stroke-linecap="round"/>
+  </svg>`);
+
+function getImageUrl(url){
+  const value = String(url || '').trim();
+  return /^(https?:\/\/|data:image\/)/i.test(value) ? value : PLACEHOLDER_IMAGE;
+}
+
 function loadMenu(){
   fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
     headers: { 'X-Master-Key': API_KEY }
@@ -218,14 +262,17 @@ function render(data){
     if (cat.items) {
       itemsHtml = cat.items.map(it => `
         <div class="item">
-          <span class="name">${it.name}${it.note ? `<span class="note">${it.note}</span>` : ""}</span>
+          <div class="item-left">
+            <img class="item-image" src="${escapeHtml(getImageUrl(it.image))}" alt="${escapeHtml(it.name)}" loading="lazy" onerror="this.onerror=null;this.src=PLACEHOLDER_IMAGE;">
+            <span class="name">${escapeHtml(it.name)}${it.note ? `<span class="note">${escapeHtml(it.note)}</span>` : ""}</span>
+          </div>
           <span class="price">${formatPrice(it.price)}</span>
         </div>`).join("");
     }
 
     section.innerHTML = `
       <div class="cat-header">
-        <h2>${cat.name}</h2>
+        <h2>${escapeHtml(cat.name)}</h2>
         <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
       <div class="cat-body">
