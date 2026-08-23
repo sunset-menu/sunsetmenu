@@ -95,6 +95,72 @@
     50%{opacity:1; transform:translateY(-4px);}
   }
 
+  /* İÇECEK ÖNERİCİ */
+  .drink-helper{
+    position:fixed;
+    right:14px;
+    top:50%;
+    z-index:1200;
+    width:118px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    transform:translateY(-50%);
+  }
+  .drink-sun-button{
+    width:66px;
+    height:66px;
+    display:grid;
+    place-items:center;
+    padding:0;
+    border:3px solid var(--red);
+    border-radius:50%;
+    background:var(--yellow);
+    color:var(--red);
+    cursor:pointer;
+    box-shadow:0 5px 0 rgba(13,13,13,.28), 0 0 18px rgba(248,183,25,.3);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .drink-sun-button:hover,
+  .drink-sun-button:focus-visible{
+    transform:scale(1.08);
+    box-shadow:0 6px 0 rgba(13,13,13,.28), 0 0 26px rgba(248,183,25,.55);
+    outline:none;
+  }
+  .drink-sun-button:active{
+    transform:scale(.96);
+  }
+  .drink-sun-icon{
+    width:48px;
+    height:48px;
+  }
+  .drink-suggestion{
+    width:100%;
+    padding:9px 8px;
+    border:2px solid var(--red);
+    border-radius:10px;
+    background:var(--yellow);
+    color:var(--red);
+    text-align:center;
+    font-size:.7rem;
+    line-height:1.25;
+    font-weight:700;
+    box-shadow:0 4px 0 rgba(13,13,13,.22);
+  }
+  .drink-suggestion strong{
+    display:block;
+    margin-top:4px;
+    font-size:.8rem;
+  }
+  .drink-suggestion.showing{
+    animation:suggestionPop .45s cubic-bezier(.16,.75,.2,1);
+  }
+  @keyframes suggestionPop{
+    0%{opacity:.2; transform:translateY(8px) scale(.94);}
+    100%{opacity:1; transform:translateY(0) scale(1);}
+  }
+
   /* HERO */
   .hero{
     background:var(--yellow);
@@ -299,6 +365,7 @@
     font-size:.95rem;
   }
   @media (prefers-reduced-motion: reduce){
+    .drink-suggestion.showing,
     .sun-object,
     .wave-object,
     .category{
@@ -309,6 +376,27 @@
     .cat-items{
       transition:none;
       transform:none;
+    }
+  }
+
+  @media (max-width:600px){
+    .drink-helper{
+      right:8px;
+      width:104px;
+    }
+    .drink-sun-button{
+      width:58px;
+      height:58px;
+    }
+    .drink-sun-icon{
+      width:42px;
+      height:42px;
+    }
+    .drink-suggestion{
+      font-size:.66rem;
+    }
+    .drink-suggestion strong{
+      font-size:.75rem;
     }
   }
 
@@ -364,6 +452,27 @@
     <div class="welcome-hint">Menüyü görmek için dokunun</div>
   </div>
 </div>
+
+<aside class="drink-helper" aria-label="İçecek önericisi">
+  <button class="drink-sun-button" id="drink-sun-button" type="button" aria-label="Rastgele içecek öner">
+    <svg class="drink-sun-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">
+        <line x1="50" y1="4" x2="50" y2="18" />
+        <line x1="50" y1="82" x2="50" y2="96" />
+        <line x1="4" y1="50" x2="18" y2="50" />
+        <line x1="82" y1="50" x2="96" y2="50" />
+        <line x1="17" y1="17" x2="27" y2="27" />
+        <line x1="73" y1="73" x2="83" y2="83" />
+        <line x1="83" y1="17" x2="73" y2="27" />
+        <line x1="27" y1="73" x2="17" y2="83" />
+        <circle cx="50" cy="50" r="25" fill="currentColor" stroke="none" />
+      </g>
+    </svg>
+  </button>
+  <div class="drink-suggestion" id="drink-suggestion" aria-live="polite">
+    Acaba ne içsem?
+  </div>
+</aside>
 
 <div class="hero">
   <svg class="sun" viewBox="0 0 200 145" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gün batımı ve dalgalar">
@@ -450,7 +559,10 @@ function loadMenu(){
   });
 }
 
+let currentMenuData = [];
+
 function render(data){
+  currentMenuData = data;
   const contentEl = document.getElementById("content");
   contentEl.innerHTML = "";
 
@@ -490,6 +602,65 @@ function render(data){
     contentEl.appendChild(section);
   });
 }
+
+const drinkButton = document.getElementById("drink-sun-button");
+const drinkSuggestion = document.getElementById("drink-suggestion");
+let hasSuggestedOnce = false;
+
+function suggestRandomDrink(){
+  const drinkKeywords = [
+    "içecek", "kahve", "coffee", "çay", "tea", "soğuk",
+    "sıcak", "meşrubat", "smoothie", "kokteyl", "bar", "drink"
+  ];
+
+  const allItems = currentMenuData.flatMap(category =>
+    (category.items || []).map(item => ({
+      ...item,
+      categoryName: category.name
+    }))
+  );
+
+  const drinks = allItems.filter(item => {
+    const categoryText = String(item.categoryName || "").toLocaleLowerCase("tr-TR");
+    const itemText = String(item.name || "").toLocaleLowerCase("tr-TR");
+    return drinkKeywords.some(keyword =>
+      categoryText.includes(keyword) || itemText.includes(keyword)
+    );
+  });
+
+  const isWater = item => {
+    const itemText = String(item.name || "").toLocaleLowerCase("tr-TR").trim();
+    return /^(su|water)$/.test(itemText) || itemText.includes("şişe su") || itemText.includes("soda suyu");
+  };
+
+  // Su, öneri havuzundan çıkarılır; diğer içecekler korunur.
+  const nonWaterDrinks = drinks.filter(item => !isWater(item));
+  const nonWaterItems = allItems.filter(item => !isWater(item));
+  const candidates = nonWaterDrinks.length ? nonWaterDrinks : nonWaterItems;
+  const sunsetSpecial = allItems.find(item =>
+    String(item.name || "").toLocaleLowerCase("tr-TR").includes("sunset special")
+  );
+
+  if(!candidates.length){
+    drinkSuggestion.innerHTML = "Menü yükleniyor...";
+    return;
+  }
+
+  // İlk tıklama daima Sunset Special; sonraki tıklamalar gerçekten rastgele.
+  const selected = !hasSuggestedOnce && sunsetSpecial
+    ? sunsetSpecial
+    : candidates[Math.floor(Math.random() * candidates.length)];
+  hasSuggestedOnce = true;
+
+  drinkSuggestion.innerHTML = `
+    <span>Bugün bunu dene:</span>
+    <strong>${escapeHtml(selected.name)}</strong>`;
+  drinkSuggestion.classList.remove("showing");
+  void drinkSuggestion.offsetWidth;
+  drinkSuggestion.classList.add("showing");
+}
+
+drinkButton.addEventListener("click", suggestRandomDrink);
 
 const welcomeScreen = document.getElementById("welcome-screen");
 let welcomeClosed = false;
