@@ -135,19 +135,25 @@
   .drink-sun-icon{
     width:48px;
     height:48px;
+    animation:drinkSunSpin 8s linear infinite;
+  }
+  @keyframes drinkSunSpin{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
   }
   .drink-suggestion{
     width:100%;
     padding:9px 8px;
-    border:2px solid var(--red);
+    border:2px solid var(--yellow);
     border-radius:10px;
-    background:var(--yellow);
+    background:transparent;
     color:var(--red);
     text-align:center;
     font-size:.7rem;
     line-height:1.25;
     font-weight:700;
-    box-shadow:0 4px 0 rgba(13,13,13,.22);
+    box-shadow:none;
+    pointer-events:none;
   }
   .drink-suggestion strong{
     display:block;
