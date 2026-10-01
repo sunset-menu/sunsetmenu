@@ -436,7 +436,7 @@
 <body>
 
 <!-- Her tıklama veya dokunuşta kapanan açılış ekranı -->
-<div class="welcome-screen" id="welcome-screen" role="button" tabindex="0" aria-label="Menüyü aç">
+<div class="welcome-screen" id="welcome-screen" role="button" tabindex="0" aria-label="Menüyü aç" onclick="closeWelcome()" ontouchend="closeWelcome()" onpointerup="closeWelcome()">
   <div class="welcome-content">
     <svg class="welcome-sun" viewBox="0 0 200 145" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <!-- Açılış ekranındaki güneş ışınları -->
@@ -522,8 +522,7 @@
 
 <script>
 // BURAYA ADMIN'DEKİ AYNI BİLGİLERİ GİR KANKA
-bid
- BIN_ID = "6abe3cabffd5d16053425047"; 
+const BIN_ID = "6abe3cabffd5d16053425047"; 
 const API_KEY = "$2a$10$uh1HMT4kiKVQTPOmJQ/ZbubDJDgk8AH.izlkHbKe/EMZoKbhR3Ngy";
 
 function formatPrice(p){
@@ -671,7 +670,9 @@ function suggestRandomDrink(){
   drinkSuggestion.classList.add("showing");
 }
 
-drinkButton.addEventListener("click", suggestRandomDrink);
+  if (drinkButton) {
+    drinkButton.addEventListener("click", suggestRandomDrink);
+  }
 
 const welcomeScreen = document.getElementById("welcome-screen");
 let welcomeClosed = false;
@@ -683,13 +684,19 @@ function closeWelcome(){
   window.setTimeout(() => welcomeScreen.remove(), 800);
 }
 
-welcomeScreen.addEventListener("pointerup", closeWelcome);
-welcomeScreen.addEventListener("keydown", (event) => {
-  if(event.key === "Enter" || event.key === " "){
-    event.preventDefault();
-    closeWelcome();
+  if (welcomeScreen) {
+    // click: masaüstü ve iOS Safari için güvenilir yedek olay
+    welcomeScreen.addEventListener("click", closeWelcome);
+    // touchend: eski iOS/WebView sürümleri için ek destek
+    welcomeScreen.addEventListener("touchend", closeWelcome, { passive: true });
+    welcomeScreen.addEventListener("pointerup", closeWelcome);
+    welcomeScreen.addEventListener("keydown", (event) => {
+      if(event.key === "Enter" || event.key === " "){
+        event.preventDefault();
+        closeWelcome();
+      }
+    });
   }
-});
 
 loadMenu();
 </script>
